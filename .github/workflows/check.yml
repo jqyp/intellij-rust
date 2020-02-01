@@ -22,7 +22,7 @@ jobs:
             fail-fast: false
             matrix:
                 os: [ ubuntu-latest, windows-latest ]
-                rust-version: [ 1.41.0, nightly-2019-12-19 ]
+                rust-version: [ 1.44.1, nightly-2020-06-29 ]
                 base-ide: [ idea, clion ]
                 platform-version: [ 201, 202 ]
                 # TODO: pass minimal supported versions of IDEs. See .travis.yml
