@@ -22,6 +22,7 @@ import com.intellij.util.IncorrectOperationException
 import com.intellij.util.containers.MultiMap
 import org.rust.ide.inspections.import.insertUseItem
 import org.rust.ide.inspections.import.lastElement
+import org.rust.ide.refactoring.move.common.RsMovePathHelper
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.ext.*
 import org.rust.openapiext.runWithCancelableProgress
@@ -57,6 +58,11 @@ class RsMoveFilesOrDirectoriesProcessor(
 
     private val psiFactory = RsPsiFactory(project)
     private val movedFile: RsFile = elementsToMove[0] as RsFile
+
+    // keys --- `RsPath`s which references moved file
+    // insideReferencesMap[path] --- path to moved file after move
+    // null means no accessible path found
+    private lateinit var insideReferencesMap: Map<RsPath, RsPath?>
 
     // keys --- `RsPath`s inside movedFile
     // outsideReferencesMap[path] --- target element for path reference
@@ -96,9 +102,29 @@ class RsMoveFilesOrDirectoriesProcessor(
     }
 
     private fun detectVisibilityProblems(usages: Array<UsageInfo>, conflicts: MultiMap<PsiElement, String>) {
+        insideReferencesMap = preprocessInsideReferences(usages)
         outsideReferencesMap = collectOutsideReferencesFromMovedFile()
-        conflictsDetector = RsMoveFilesOrDirectoriesConflictsDetector(movedFile, newParentMod, outsideReferencesMap)
-        conflictsDetector.detectVisibilityProblems(usages, conflicts)
+        conflictsDetector = RsMoveFilesOrDirectoriesConflictsDetector(
+            movedFile,
+            newParentMod,
+            insideReferencesMap,
+            outsideReferencesMap
+        )
+        conflictsDetector.detectVisibilityProblems(conflicts)
+    }
+
+    private fun preprocessInsideReferences(usages: Array<UsageInfo>): Map<RsPath, RsPath?> {
+        val pathHelper = RsMovePathHelper(project, newParentMod)
+        return usages
+            .mapNotNull { usage ->
+                val path = usage.element as? RsPath
+                val target = usage.reference?.resolve() as? RsQualifiedNamedElement
+                if (path == null || target == null) return@mapNotNull null
+
+                val pathNew = pathHelper.findPathAfterMove(path, target)
+                path to pathNew
+            }
+            .toMap()
     }
 
     private fun collectOutsideReferencesFromMovedFile(): MutableMap<RsPath, RsElement> {
@@ -185,7 +211,7 @@ class RsMoveFilesOrDirectoriesProcessor(
     private fun retargetOtherUsages(otherUsages: MutableList<UsageInfo>) {
         val movedFileName = movedFile.modName
         if (movedFileName == null) {
-            super.retargetUsages(otherUsages.toTypedArray(), emptyMap())
+            retargetUsages(otherUsages.toTypedArray(), emptyMap())
             return
         }
 
@@ -224,7 +250,17 @@ class RsMoveFilesOrDirectoriesProcessor(
             }
         }
 
-        super.retargetUsages(otherUsagesRemaining.toTypedArray(), emptyMap())
+        retargetUsages(otherUsagesRemaining.toTypedArray(), emptyMap())
+    }
+
+    override fun retargetUsages(usages: Array<out UsageInfo>, oldToNewMap: Map<PsiElement, PsiElement>) {
+        val usagesRemaining = usages.filter { usage ->
+            val path = usage.element as? RsPath ?: return@filter false
+            val pathNew = insideReferencesMap[path] ?: return@filter false
+            path.replace(pathNew)
+            true
+        }
+        super.retargetUsages(usagesRemaining.toTypedArray(), oldToNewMap)
     }
 
     private fun updateReferencesInMovedFileBeforeMove() {
