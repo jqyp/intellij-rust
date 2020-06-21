@@ -2,7 +2,6 @@ package org.rust.ide.sdk.add
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.DialogWrapper
@@ -37,7 +36,6 @@ import javax.swing.*
  */
 class RsAddSdkDialog private constructor(
     private val project: Project?,
-    private val module: Module?,
     private val existingSdks: List<Sdk>
 ) : DialogWrapper(project) {
     /**
@@ -54,10 +52,9 @@ class RsAddSdkDialog private constructor(
     private val nextAction: Action = object : DialogWrapperAction("Next") {
         override fun doAction(e: ActionEvent) {
             val selectedPanel = selectedPanel ?: return
-            if (RsAddSdkDialogFlowAction.NEXT in selectedPanel.actions) {
-                onNext()
-            } else if (RsAddSdkDialogFlowAction.FINISH in selectedPanel.actions) {
-                onFinish()
+            when {
+                RsAddSdkDialogFlowAction.NEXT in selectedPanel.actions -> onNext()
+                RsAddSdkDialogFlowAction.FINISH in selectedPanel.actions -> onFinish()
             }
         }
     }
@@ -77,10 +74,13 @@ class RsAddSdkDialog private constructor(
     }
 
     override fun createCenterPanel(): JComponent {
-        val panels = mutableListOf<RsAddSdkView>(RsAddRustupPanel())
+        val panels = mutableListOf<RsAddSdkView>(
+            RsAddRustupToolchainPanel(existingSdks),
+            RsAddSystemWideToolchainPanel(existingSdks)
+        )
         val extendedPanels = RsAddSdkProvider.EP_NAME.extensions
             .mapNotNull { provider ->
-                val view = provider.safeCreateView(project, module, existingSdks, context)
+                val view = provider.safeCreateView(project, existingSdks, context)
                 if (view is Disposable) Disposer.register(disposable, view)
                 view
             }
@@ -270,13 +270,8 @@ class RsAddSdkDialog private constructor(
         private const val REGULAR_CARD_PANE: String = "Regular"
         private const val WIZARD_CARD_PANE: String = "Wizard"
 
-        fun show(
-            project: Project?,
-            module: Module?,
-            existingSdks: List<Sdk>,
-            sdkAddedCallback: (Sdk?) -> Unit
-        ) {
-            val dialog = RsAddSdkDialog(project, module, existingSdks)
+        fun show(project: Project?, existingSdks: List<Sdk>, sdkAddedCallback: (Sdk?) -> Unit) {
+            val dialog = RsAddSdkDialog(project, existingSdks)
             dialog.init()
 
             val sdk = if (dialog.showAndGet()) dialog.getOrCreateSdk() else null
@@ -285,11 +280,10 @@ class RsAddSdkDialog private constructor(
 
         private fun RsAddSdkProvider.safeCreateView(
             project: Project?,
-            module: Module?,
             existingSdks: List<Sdk>,
             context: UserDataHolder
         ): RsAddSdkView? = try {
-            createView(project, module, null, existingSdks, context)
+            createView(project, null, existingSdks, context)
         } catch (e: NoClassDefFoundError) {
             LOG.info(e)
             null
@@ -316,9 +310,9 @@ private fun doCreateSouthPanel(leftButtons: List<JButton>, rightButtons: List<JB
     val bag = GridBag().setDefaultInsets(insets)
     val lrButtonsPanel = NonOpaquePanel(GridBagLayout())
     val leftButtonsPanel = createButtonsPanel(leftButtons)
-    leftButtonsPanel.border = BorderFactory.createEmptyBorder(0, 0, 0, 20)  // leave some space between button groups
+    leftButtonsPanel.border = BorderFactory.createEmptyBorder(0, 0, 0, 20) // leave some space between button groups
     lrButtonsPanel.add(leftButtonsPanel, bag.next())
-    lrButtonsPanel.add(Box.createHorizontalGlue(), bag.next().weightx(1.0).fillCellHorizontally())   // left strut
+    lrButtonsPanel.add(Box.createHorizontalGlue(), bag.next().weightx(1.0).fillCellHorizontally()) // left strut
     val buttonsPanel = createButtonsPanel(rightButtons)
     lrButtonsPanel.add(buttonsPanel, bag.next())
     panel.add(lrButtonsPanel, BorderLayout.CENTER)

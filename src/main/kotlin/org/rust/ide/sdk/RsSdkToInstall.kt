@@ -31,15 +31,13 @@ import com.intellij.webcore.packaging.PackageManagementService
 import com.intellij.webcore.packaging.PackagesNotificationPanel
 import org.jetbrains.annotations.CalledInAny
 import org.jetbrains.annotations.CalledInAwt
-import org.rust.ide.sdk.RsSdkUtils.resetRustupSdksDetectors
 import java.io.File
 import java.io.IOException
 
 private val LOG: Logger = Logger.getInstance(RsSdkToInstall::class.java)
 
-@CalledInAny
-internal fun getRustupToInstall(): RsSdkToInstall? =
-    if (SystemInfo.isWindows) getRustupToInstallOnWindows() else null
+fun getSdksToInstall(): List<RsSdkToInstall> =
+    if (SystemInfo.isWindows) listOf(getRustupToInstallOnWindows()) else emptyList()
 
 private fun getRustupToInstallOnWindows(): RsSdkToInstallOnWindows {
     val version = "1.21.1"
@@ -68,7 +66,7 @@ private fun getRustupToInstallOnWindows(): RsSdkToInstallOnWindows {
     }
 }
 
-internal abstract class RsSdkToInstall internal constructor(name: String, version: String)
+abstract class RsSdkToInstall internal constructor(name: String, version: String)
     : ProjectJdkImpl(name, RsSdkType.getInstance(), null, version) {
 
     @CalledInAny
@@ -242,7 +240,6 @@ private class RsSdkToInstallOnWindows(
 
     private fun findInstalledSdk(rustupSdksDetector: () -> List<RsDetectedSdk>): RsDetectedSdk? {
         LOG.debug("Resetting rustup sdks detectors")
-        resetRustupSdksDetectors()
 
         return rustupSdksDetector()
             .also { sdks ->

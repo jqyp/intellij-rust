@@ -11,14 +11,15 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
+import org.rust.ide.icons.RsIcons
 import org.rust.ide.sdk.RsSdkToInstall
 import java.awt.Component
+import javax.swing.Icon
 import javax.swing.JPanel
 
 abstract class RsAddSdkPanel : JPanel(), RsAddSdkView {
     abstract override val panelName: String
-    open val sdk: Sdk? = null
-    open var newProjectPath: String? = null
+    override val icon: Icon = RsIcons.RUST
 
     override val actions: Map<RsAddSdkDialogFlowAction, Boolean>
         get() = mapOf(RsAddSdkDialogFlowAction.OK.enabled())
@@ -38,8 +39,6 @@ abstract class RsAddSdkPanel : JPanel(), RsAddSdkView {
 
     override fun complete() {}
 
-    override fun getOrCreateSdk(): Sdk? = sdk
-
     override fun onSelected() {}
 
     override fun validateAll(): List<ValidationInfo> = emptyList()
@@ -48,9 +47,10 @@ abstract class RsAddSdkPanel : JPanel(), RsAddSdkView {
 
     companion object {
 
+        @JvmStatic
         protected fun validateSdkComboBox(field: RsSdkPathChoosingComboBox): ValidationInfo? =
             when (val sdk = field.selectedSdk) {
-                null -> ValidationInfo("Toolchain field is empty", field)
+                null -> ValidationInfo("SDK field is empty", field)
                 is RsSdkToInstall -> {
                     val message = sdk.getInstallationWarning(CommonBundle.getOkButtonText())
                     ValidationInfo(message).asWarning().withOKEnabled()
@@ -61,6 +61,7 @@ abstract class RsAddSdkPanel : JPanel(), RsAddSdkView {
         /**
          * Obtains a list of sdk on a pool using [sdkObtainer], then fills [sdkComboBox] on the EDT.
          */
+        @JvmStatic
         @Suppress("UnstableApiUsage")
         protected fun addToolchainsAsync(sdkComboBox: RsSdkPathChoosingComboBox, sdkObtainer: () -> List<Sdk>) {
             ApplicationManager.getApplication().executeOnPooledThread {

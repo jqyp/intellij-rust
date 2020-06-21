@@ -28,7 +28,7 @@ class RsDirectoryProjectGenerator : DirectoryProjectGeneratorBase<ConfigurationD
 
     private var peer: RsProjectGeneratorPeer? = null
 
-    override fun getName(): String = "Rust"
+    override fun getName(): String = "Rust Legacy"
     override fun getLogo(): Icon? = RsIcons.RUST
     override fun createPeer(): ProjectGeneratorPeer<ConfigurationData> = RsProjectGeneratorPeer().also { peer = it }
 

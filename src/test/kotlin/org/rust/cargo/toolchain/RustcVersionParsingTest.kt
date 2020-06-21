@@ -10,6 +10,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.rust.cargo.toolchain.RustChannel.*
+import org.rust.cargo.toolchain.RustcVersion.Companion.parseRustcVersion
 import kotlin.test.assertEquals
 import java.time.LocalDate.parse as parseDate
 

@@ -26,6 +26,7 @@ import com.intellij.util.execution.ParametersListUtil
 import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.text.SemVer
 import org.jetbrains.annotations.TestOnly
+import org.rust.cargo.CargoConstants
 import org.rust.cargo.CargoConstants.RUST_BACKTRACE_ENV_VAR
 import org.rust.cargo.project.model.cargoProjects
 import org.rust.cargo.project.settings.rustSettings
@@ -234,7 +235,7 @@ class Cargo(private val cargoExecutable: Path) {
         CargoCommandLine("init", path, args).execute(project, owner)
         fullyRefreshDirectory(directory)
 
-        val manifest = checkNotNull(directory.findChild(RustToolchain.CARGO_TOML)) { "Can't find the manifest file" }
+        val manifest = checkNotNull(directory.findChild(CargoConstants.MANIFEST_FILE)) { "Can't find the manifest file" }
         val fileName = if (createBinary) "main.rs" else "lib.rs"
         val sourceFiles = listOfNotNull(directory.findFileByRelativePath("src/$fileName"))
         return GeneratedFilesHolder(manifest, sourceFiles)

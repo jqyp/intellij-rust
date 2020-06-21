@@ -8,12 +8,10 @@ package org.rust.cargo.project.configurable
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.UnnamedConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.roots.ui.configuration.projectRoot.ProjectSdksModel
 import com.intellij.openapi.ui.ComboBox
@@ -23,7 +21,7 @@ import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.ComboboxSpeedSearch
 import com.intellij.util.ui.JBUI
 import org.rust.ide.sdk.*
-import org.rust.ide.sdk.RsSdkRenderingUtils.groupModuleSdksByTypes
+import org.rust.ide.sdk.RsSdkRenderingUtils.groupSdksByTypes
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.event.ItemEvent
@@ -32,11 +30,8 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 
-class RsActiveSdkConfigurable private constructor(
-    private val project: Project,
-    private val module: Module?
-) : UnnamedConfigurable {
-    private val sdkCombo: ComboBox<Any> = buildSdkComboBox(::onShowAllSelected, ::onSdkSelected)
+open class RsActiveSdkConfigurable private constructor(private val project: Project) : UnnamedConfigurable {
+    private val sdkComboBox: ComboBox<Any> = buildSdkComboBox(::onShowAllSelected, ::onSdkSelected)
     private val toolchainList: RsConfigurableToolchainList = RsConfigurableToolchainList.getInstance(project)
     private val projectSdksModel: ProjectSdksModel = toolchainList.model
     private val mainPanel: JPanel
@@ -47,31 +42,14 @@ class RsActiveSdkConfigurable private constructor(
         get() = editableSelectedSdk?.let { projectSdksModel.findSdk(it) }
 
     private val editableSelectedSdk: Sdk?
-        get() = sdkCombo.selectedItem as Sdk
-
-    private var sdk: Sdk?
-        get() {
-            if (module == null) return ProjectRootManager.getInstance(project).projectSdk
-            val rootManager = ModuleRootManager.getInstance(module)
-            return rootManager.sdk
-        }
-        set(item) {
-            project.rustSdk = item
-            if (module != null) {
-                module.rustSdk = item
-            }
-        }
+        get() = sdkComboBox.selectedItem as Sdk
 
     init {
-        val detailsButton = buildDetailsButton(sdkCombo, ::onShowDetailsClicked)
+        val detailsButton = buildDetailsButton(sdkComboBox, ::onShowDetailsClicked)
         val customizer = buildCustomizer()
-        mainPanel = buildPanel(project, sdkCombo, detailsButton, customizer)
+        mainPanel = buildPanel(project, sdkComboBox, detailsButton, customizer)
         disposable = customizer?.second
     }
-
-    constructor(project: Project) : this(project, null)
-
-    constructor(module: Module) : this(module.project, module)
 
     private fun onShowAllSelected() {
         buildAllSdksDialog().show()
@@ -84,7 +62,6 @@ class RsActiveSdkConfigurable private constructor(
     private fun onShowDetailsClicked(detailsButton: JButton) {
         RsSdkDetailsStep.show(
             project,
-            module,
             projectSdksModel.sdks,
             buildAllSdksDialog(),
             mainPanel,
@@ -105,7 +82,6 @@ class RsActiveSdkConfigurable private constructor(
     private fun buildAllSdksDialog(): RsSdkDetailsDialog =
         RsSdkDetailsDialog(
             project,
-            module,
             selectedSdkCallback = { selectedSdk ->
                 if (selectedSdk != null) {
                     updateSdkListAndSelect(selectedSdk)
@@ -133,18 +109,18 @@ class RsActiveSdkConfigurable private constructor(
 
     override fun createComponent(): JComponent = mainPanel
 
-    override fun isModified(): Boolean = sdk != originalSelectedSdk
+    override fun isModified(): Boolean = project.rustSdk != originalSelectedSdk
 
     override fun apply() {
         val selectedSdk = originalSelectedSdk
         if (selectedSdk != null) {
             (selectedSdk.sdkType as RsSdkType).setupSdkPaths(selectedSdk)
         }
-        sdk = selectedSdk
+        project.rustSdk = selectedSdk
     }
 
     override fun reset() {
-        updateSdkListAndSelect(sdk)
+        updateSdkListAndSelect(project.rustSdk)
     }
 
     private fun updateSdkListAndSelect(selectedSdk: Sdk?) {
@@ -153,7 +129,7 @@ class RsActiveSdkConfigurable private constructor(
         val items = mutableListOf<Any?>()
         items.add(null)
 
-        val moduleSdksByTypes = groupModuleSdksByTypes(allRustSdks, module, RsSdkUtils::isInvalid)
+        val moduleSdksByTypes = groupSdksByTypes(allRustSdks, RsSdkUtils::isInvalid)
 
         val renderedSdkTypes = RsRenderedSdkType.values()
         for (i in renderedSdkTypes.indices) {
@@ -169,9 +145,9 @@ class RsActiveSdkConfigurable private constructor(
         items.add(RsSdkListCellRenderer.SEPARATOR)
         items.add(SHOW_ALL)
 
-        sdkCombo.renderer = RsSdkListCellRenderer(null)
+        sdkComboBox.renderer = RsSdkListCellRenderer(null)
         val selection = selectedSdk?.let { projectSdksModel.findSdk(it.name) }
-        sdkCombo.model = CollectionComboBoxModel(items, selection)
+        sdkComboBox.model = CollectionComboBoxModel(items, selection)
         onSdkSelected()
     }
 

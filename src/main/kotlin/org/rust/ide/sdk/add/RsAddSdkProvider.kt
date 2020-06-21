@@ -13,7 +13,6 @@ interface RsAddSdkProvider {
      */
     fun createView(
         project: Project?,
-        module: Module?,
         newProjectPath: String?,
         existingSdks: List<Sdk>,
         context: UserDataHolder

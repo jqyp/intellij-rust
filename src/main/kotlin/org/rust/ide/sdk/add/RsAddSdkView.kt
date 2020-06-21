@@ -5,6 +5,7 @@
 
 package org.rust.ide.sdk.add
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
 import org.jetbrains.annotations.Nls
@@ -15,23 +16,11 @@ import javax.swing.Icon
  * Represents the view for adding new Python SDK. It is used in
  * [RsAddSdkDialog].
  */
-interface RsAddSdkView {
+interface RsAddSdkView: Disposable {
     val panelName: String
         @Nls(capitalization = Nls.Capitalization.Title) get
 
     val icon: Icon
-
-    /**
-     * Returns the created sdk after closing [RsAddSdkDialog]. The method may
-     * return `null` if the dialog was closed or cancelled or if the creation
-     * failed.
-     *
-     * The creation of the sdk may occur either in this method or in the
-     * [complete] method a while back.
-     */
-    fun getOrCreateSdk(): Sdk?
-
-    fun onSelected()
 
     /**
      * [RsAddSdkStateListener.onActionsStateChanged] is called after changes in
@@ -44,6 +33,18 @@ interface RsAddSdkView {
      * [previous].
      */
     val component: Component
+
+    /**
+     * Returns the created sdk after closing [RsAddSdkDialog]. The method may
+     * return `null` if the dialog was closed or cancelled or if the creation
+     * failed.
+     *
+     * The creation of the sdk may occur either in this method or in the
+     * [complete] method a while back.
+     */
+    fun getOrCreateSdk(): Sdk?
+
+    fun onSelected()
 
     /**
      * @throws IllegalStateException
@@ -81,4 +82,6 @@ interface RsAddSdkView {
     fun validateAll(): List<ValidationInfo>
 
     fun addStateListener(stateListener: RsAddSdkStateListener)
+
+    override fun dispose() {}
 }

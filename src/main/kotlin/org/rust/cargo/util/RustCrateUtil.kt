@@ -8,6 +8,7 @@ package org.rust.cargo.util
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
+import org.rust.cargo.CargoConstants
 import org.rust.cargo.toolchain.RustToolchain
 
 enum class StdLibType {
@@ -76,5 +77,5 @@ object AutoInjectedCrates {
  */
 val Module.cargoProjectRoot: VirtualFile?
     get() = ModuleRootManager.getInstance(this).contentRoots.firstOrNull {
-        it.findChild(RustToolchain.CARGO_TOML) != null
+        it.findChild(CargoConstants.MANIFEST_FILE) != null
     }

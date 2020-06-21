@@ -205,7 +205,7 @@ open class CargoProjectsServiceImpl(
         project.modules
             .asSequence()
             .flatMap { ModuleRootManager.getInstance(it).contentRoots.asSequence() }
-            .mapNotNull { it.findChild(RustToolchain.CARGO_TOML) }
+            .mapNotNull { it.findChild(CargoConstants.MANIFEST_FILE) }
 
     /**
      * All modifications to project model except for low-level `loadState` should

@@ -6,13 +6,11 @@
 package org.rust.ide.sdk
 
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkModel
 import com.intellij.openapi.projectRoots.SdkModificator
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.roots.ui.configuration.projectRoot.ProjectSdksModel
 import com.intellij.openapi.ui.DialogWrapper
@@ -30,7 +28,6 @@ import javax.swing.event.ListSelectionListener
 
 class RsSdkDetailsDialog(
     private val project: Project,
-    private val module: Module?,
     private val selectedSdkCallback: (Sdk?) -> Unit,
     private val cancelCallback: (Boolean) -> Unit
 ) : DialogWrapper(project) {
@@ -38,9 +35,8 @@ class RsSdkDetailsDialog(
 
     private val modifiedModificators: MutableSet<SdkModificator> = hashSetOf()
 
-    // there is an assumption that dialog started with unmodified sdks model
-    // otherwise processing `Cancel` will be more complicated
-    // to correctly revert changes
+    // there is an assumption that dialog started with unmodified sdks model otherwise processing `Cancel` will be more
+    // complicated to correctly revert changes
     private val sdkModelListener: SdkModel.Listener = MySdkModelListener()
 
     private val toolchainList: RsConfigurableToolchainList = RsConfigurableToolchainList.getInstance(project)
@@ -74,13 +70,6 @@ class RsSdkDetailsDialog(
     private val editableSelectedSdk: Sdk?
         get() = sdkList.selectedValue
 
-    private val sdk: Sdk?
-        get() {
-            if (module == null) return ProjectRootManager.getInstance(project).projectSdk
-            val rootManager = ModuleRootManager.getInstance(module)
-            return rootManager.sdk
-        }
-
     init {
         title = "Rust Toolchains"
         init()
@@ -99,9 +88,7 @@ class RsSdkDetailsDialog(
 
     private fun updateOkButton() {
         super.setOKActionEnabled(
-            projectSdksModel.isModified
-                || modifiedModificators.isNotEmpty()
-                || originalSelectedSdk !== sdk
+            projectSdksModel.isModified || modifiedModificators.isNotEmpty() || originalSelectedSdk !== project.rustSdk
         )
     }
 
@@ -144,7 +131,7 @@ class RsSdkDetailsDialog(
     }
 
     private fun refreshSdkList() {
-        var projectSdk = sdk
+        var projectSdk = project.rustSdk
         sdkList.model = CollectionListModel(toolchainList.allRustSdks)
         if (projectSdk != null) {
             projectSdk = projectSdksModel.findSdk(projectSdk.name)
@@ -155,7 +142,7 @@ class RsSdkDetailsDialog(
     }
 
     private fun addSdk() {
-        RsAddSdkDialog.show(project, module, projectSdksModel.sdks.toList()) { sdk ->
+        RsAddSdkDialog.show(project, projectSdksModel.sdks.toList()) { sdk ->
             if (sdk != null && projectSdksModel.findSdk(sdk.name) == null) {
                 projectSdksModel.addSdk(sdk)
                 setSelectedSdk(sdk)
@@ -213,7 +200,7 @@ class RsSdkDetailsDialog(
         }
 
         refreshSdkList()
-        sdk?.let { sdkList.setSelectedValue(it, true) }
+        project.rustSdk?.let { sdkList.setSelectedValue(it, true) }
     }
 
     private fun reloadSdk(currentSdk: Sdk) = RsSdkUpdater.updateLocalSdkVersion(currentSdk)

@@ -6,9 +6,9 @@
 package org.rust.ide.sdk
 
 import com.intellij.ide.plugins.PluginManagerCore.isUnitTestMode
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.TransactionGuard
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -47,7 +47,7 @@ class RsSdkUpdater : StartupActivity.Background {
         private fun changeSdkModificator(sdk: Sdk, processor: (SdkModificator) -> Boolean) {
             val key = RsSdkType.getSdkKey(sdk)
             TransactionGuard.getInstance().assertWriteSafeContext(ModalityState.defaultModalityState())
-            ApplicationManager.getApplication().invokeAndWait {
+            invokeAndWaitIfNeeded {
                 val sdkInsideInvoke = RsSdkUtils.findSdkByKey(key)
                 val effectiveModificator = sdkInsideInvoke?.sdkModificator ?: sdk.sdkModificator
                 if (processor(effectiveModificator)) {
