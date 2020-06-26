@@ -18,10 +18,9 @@ import com.intellij.refactoring.move.MoveHandlerDelegate
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import org.rust.lang.RsLanguage
 import org.rust.lang.core.psi.*
-import org.rust.lang.core.psi.ext.RsElement
-import org.rust.lang.core.psi.ext.RsItemElement
-import org.rust.lang.core.psi.ext.RsMod
-import org.rust.lang.core.psi.ext.descendantOfTypeStrict
+import org.rust.lang.core.psi.ext.*
+import org.rust.lang.core.types.ty.TyAdt
+import org.rust.lang.core.types.type
 
 class RsMoveTopLevelItemsHandler : MoveHandlerDelegate() {
 
@@ -66,11 +65,13 @@ class RsMoveTopLevelItemsHandler : MoveHandlerDelegate() {
 
     private fun doMove(project: Project, elements: Array<out PsiElement>) {
         val containingMod = PsiTreeUtil.findCommonParent(*elements)?.parentOfType<RsMod>() ?: return
-        val itemsToMove = elements.filterIsInstance<RsItemElement>().toSet()
+        val itemsToMove = elements.filterIsInstance<RsItemElement>()
 
         if (!CommonRefactoringUtil.checkReadOnlyStatusRecursively(project, itemsToMove, true)) return
 
-        RsMoveTopLevelItemsDialog(project, itemsToMove, containingMod).show()
+        val relatedImplItems = collectRelatedImplItems(containingMod, itemsToMove)
+        val itemsToMoveAll = (itemsToMove + relatedImplItems).toSet()
+        RsMoveTopLevelItemsDialog(project, itemsToMoveAll, containingMod).show()
     }
 
     companion object {
@@ -83,4 +84,29 @@ class RsMoveTopLevelItemsHandler : MoveHandlerDelegate() {
                 && element !is RsForeignModItem
         }
     }
+}
+
+private fun collectRelatedImplItems(containingMod: RsMod, items: List<RsItemElement>): List<RsImplItem> {
+    // For struct `Foo` we should collect:
+    // * impl Foo { ... }
+    // * impl ... for Foo { ... }
+    // * Maybe also `impl From<Foo> for Bar { ... }`?
+    //   if `Bar` belongs to same crate (but to different module from `Foo`)
+    //
+    // For trait `Foo` we should collect:
+    // * impl Foo for ... { ... }
+    return groupImplsByStructOrTrait(containingMod, items).values.flatten()
+}
+
+private fun groupImplsByStructOrTrait(containingMod: RsMod, items: List<RsItemElement>): Map<RsItemElement, List<RsImplItem>> {
+    return containingMod
+        .childrenOfType<RsImplItem>()
+        .mapNotNull { impl ->
+            val struct = (impl.typeReference?.type as? TyAdt)?.item
+            val trait = impl.traitRef?.path?.reference?.resolve() as? RsTraitItem
+            val relatedItem = struct?.takeIf { items.contains(it) } as RsItemElement?
+                ?: trait?.takeIf { items.contains(it) }
+            if (relatedItem != null) relatedItem to impl else null
+        }
+        .groupBy({ it.first }, { it.second })
 }
