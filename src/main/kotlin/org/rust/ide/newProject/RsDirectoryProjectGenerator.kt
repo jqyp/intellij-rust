@@ -18,6 +18,7 @@ import com.intellij.platform.DirectoryProjectGenerator
 import com.intellij.platform.DirectoryProjectGeneratorBase
 import com.intellij.platform.ProjectGeneratorPeer
 import org.rust.ide.icons.RsIcons
+import org.rust.ide.sdk.toolchain
 import java.io.File
 import javax.swing.Icon
 
@@ -28,7 +29,7 @@ class RsDirectoryProjectGenerator : DirectoryProjectGeneratorBase<ConfigurationD
 
     private var peer: RsProjectGeneratorPeer? = null
 
-    override fun getName(): String = "Rust Legacy"
+    override fun getName(): String = "Rust"
     override fun getLogo(): Icon? = RsIcons.RUST
     override fun createPeer(): ProjectGeneratorPeer<ConfigurationData> = RsProjectGeneratorPeer().also { peer = it }
 
@@ -40,8 +41,8 @@ class RsDirectoryProjectGenerator : DirectoryProjectGeneratorBase<ConfigurationD
     }
 
     override fun generateProject(project: Project, baseDir: VirtualFile, data: ConfigurationData, module: Module) {
-        val (settings, createBinary) = data
-        val generatedFiles = settings.toolchain?.rawCargo()?.init(project, module, baseDir, createBinary) ?: return
+        val (sdk, createBinary) = data
+        val generatedFiles = sdk?.toolchain?.rawCargo()?.init(project, module, baseDir, createBinary) ?: return
 
         // Open new files
         if (!isHeadlessEnvironment) {
@@ -53,7 +54,8 @@ class RsDirectoryProjectGenerator : DirectoryProjectGeneratorBase<ConfigurationD
         }
     }
 
-    override fun createStep(projectGenerator: DirectoryProjectGenerator<ConfigurationData>,
-                            callback: AbstractNewProjectStep.AbstractCallback<ConfigurationData>): AbstractActionWithPanel =
-        RsProjectSettingsStep(projectGenerator)
+    override fun createStep(
+        projectGenerator: DirectoryProjectGenerator<ConfigurationData>,
+        callback: AbstractNewProjectStep.AbstractCallback<ConfigurationData>
+    ): AbstractActionWithPanel = RsProjectSettingsStep(projectGenerator)
 }

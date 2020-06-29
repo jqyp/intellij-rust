@@ -9,9 +9,11 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.layout.panel
-import org.rust.ide.sdk.*
+import org.rust.cargo.toolchain.Rustup
+import org.rust.cargo.toolchain.Rustup.Companion.listToolchains
+import org.rust.ide.sdk.RsDetectedSdk
+import org.rust.ide.sdk.RsSdkAdditionalData
 import org.rust.ide.sdk.RsSdkUtils.detectRustupSdks
-import org.rust.ide.sdk.RsSdkUtils.listToolchains
 import org.rust.openapiext.UiDebouncer
 import org.rust.stdext.toPath
 import java.awt.BorderLayout
@@ -19,7 +21,7 @@ import java.awt.BorderLayout
 class RsAddRustupToolchainPanel(private val existingSdks: List<Sdk>) : RsAddSdkPanel() {
     override val panelName: String = "Rustup toolchain"
     private val sdkComboBox: RsSdkPathChoosingComboBox = RsSdkPathChoosingComboBox()
-    private val toolchainComboBox: ComboBox<String> = ComboBox()
+    private val toolchainComboBox: ComboBox<Rustup.Toolchain> = ComboBox()
     private val toolchainUpdateDebouncer: UiDebouncer = UiDebouncer(this)
 
     init {
@@ -30,13 +32,7 @@ class RsAddRustupToolchainPanel(private val existingSdks: List<Sdk>) : RsAddSdkP
             row("Toolchain:") { toolchainComboBox() }
         }
         add(formPanel, BorderLayout.NORTH)
-
-        addToolchainsAsync(sdkComboBox) {
-            val detectedSdks = detectRustupSdks(existingSdks)
-            detectedSdks.takeIf { it.isNotEmpty() || existingSdks.any { sdk -> sdk.sdkType is RsSdkType } }
-                ?: getSdksToInstall()
-        }
-
+        addToolchainsAsync(sdkComboBox) { detectRustupSdks(existingSdks) }
         addChangeListener(Runnable(::update))
     }
 
@@ -44,12 +40,18 @@ class RsAddRustupToolchainPanel(private val existingSdks: List<Sdk>) : RsAddSdkP
 
     override fun getOrCreateSdk(): Sdk? {
         val sdk = when (val sdk = sdkComboBox.selectedSdk) {
-            is RsSdkToInstall -> sdk.install(null) { detectRustupSdks(existingSdks) }?.setup(existingSdks)
             is RsDetectedSdk -> sdk.setup(existingSdks)
             else -> sdk
         }
+
+        val toolchain = toolchainComboBox.selectedItem as? Rustup.Toolchain
         val additionalData = sdk?.sdkAdditionalData as? RsSdkAdditionalData
-        additionalData?.toolchainName = toolchainComboBox.selectedItem as? String
+        additionalData?.apply {
+            toolchainName = toolchain?.name
+            toolchainPath = toolchain?.path
+            rustupPath = sdk.homePath
+        }
+
         return sdk
     }
 

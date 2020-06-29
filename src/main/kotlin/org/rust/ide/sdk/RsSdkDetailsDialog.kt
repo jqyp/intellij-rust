@@ -8,10 +8,10 @@ package org.rust.ide.sdk
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkModel
 import com.intellij.openapi.projectRoots.SdkModificator
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.roots.ui.configuration.projectRoot.ProjectSdksModel
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.Disposer
@@ -19,6 +19,7 @@ import com.intellij.ui.*
 import com.intellij.ui.components.JBList
 import com.intellij.util.containers.FactoryMap
 import org.rust.cargo.project.configurable.RsConfigurableToolchainList
+import org.rust.cargo.project.settings.rustSdk
 import org.rust.ide.sdk.add.RsAddSdkDialog
 import java.awt.Dimension
 import javax.swing.JComponent
@@ -27,7 +28,7 @@ import javax.swing.ListSelectionModel
 import javax.swing.event.ListSelectionListener
 
 class RsSdkDetailsDialog(
-    private val project: Project,
+    private val project: Project?,
     private val selectedSdkCallback: (Sdk?) -> Unit,
     private val cancelCallback: (Boolean) -> Unit
 ) : DialogWrapper(project) {
@@ -61,6 +62,9 @@ class RsSdkDetailsDialog(
         }
     )
 
+    private val effectiveProject: Project
+        get() = project ?: ProjectManager.getInstance().defaultProject
+
     private val originalSelectedSdk: Sdk?
         get() {
             val editableSdk = editableSelectedSdk ?: return null
@@ -88,7 +92,9 @@ class RsSdkDetailsDialog(
 
     private fun updateOkButton() {
         super.setOKActionEnabled(
-            projectSdksModel.isModified || modifiedModificators.isNotEmpty() || originalSelectedSdk !== project.rustSdk
+            projectSdksModel.isModified
+                || modifiedModificators.isNotEmpty()
+                || originalSelectedSdk !== effectiveProject.rustSdk
         )
     }
 
@@ -131,7 +137,7 @@ class RsSdkDetailsDialog(
     }
 
     private fun refreshSdkList() {
-        var projectSdk = project.rustSdk
+        var projectSdk = effectiveProject.rustSdk
         sdkList.model = CollectionListModel(toolchainList.allRustSdks)
         if (projectSdk != null) {
             projectSdk = projectSdksModel.findSdk(projectSdk.name)
@@ -158,7 +164,7 @@ class RsSdkDetailsDialog(
     private fun editSdk() {
         val currentSdk = editableSelectedSdk ?: return
         val modificator = modificators[currentSdk] ?: return
-        val dialog = RsEditSdkDialog(project, modificator) {
+        val dialog = RsEditSdkDialog(effectiveProject, modificator) {
             if (isDuplicateSdkName(it, currentSdk)) {
                 "Please specify a unique name for the toolchain"
             } else {
@@ -200,7 +206,7 @@ class RsSdkDetailsDialog(
         }
 
         refreshSdkList()
-        project.rustSdk?.let { sdkList.setSelectedValue(it, true) }
+        effectiveProject.rustSdk?.let { sdkList.setSelectedValue(it, true) }
     }
 
     private fun reloadSdk(currentSdk: Sdk) = RsSdkUpdater.updateLocalSdkVersion(currentSdk)

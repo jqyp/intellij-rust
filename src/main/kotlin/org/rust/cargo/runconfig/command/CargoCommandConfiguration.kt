@@ -18,7 +18,7 @@ import com.intellij.util.execution.ParametersListUtil
 import org.jdom.Element
 import org.rust.cargo.project.model.CargoProject
 import org.rust.cargo.project.model.cargoProjects
-import org.rust.cargo.project.settings.rustSettings
+import org.rust.cargo.project.settings.isRustupAvailable
 import org.rust.cargo.project.settings.toolchain
 import org.rust.cargo.runconfig.CargoRunState
 import org.rust.cargo.runconfig.CargoTestRunState
@@ -157,10 +157,10 @@ class CargoCommandConfiguration(
             ?: return CleanConfiguration.error("No Rust toolchain specified")
 
         if (!toolchain.looksLikeValidToolchain()) {
-            return CleanConfiguration.error("Invalid toolchain: ${toolchain.presentableLocation}")
+            return CleanConfiguration.error("Invalid toolchain: ${toolchain.location}")
         }
 
-        if (!toolchain.isRustupAvailable && channel != RustChannel.DEFAULT) {
+        if (!project.isRustupAvailable && channel != RustChannel.DEFAULT) {
             return CleanConfiguration.error("Channel '$channel' is set explicitly with no rustup available")
         }
 

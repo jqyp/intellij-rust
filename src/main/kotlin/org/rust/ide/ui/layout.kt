@@ -59,6 +59,6 @@ private class RsLayoutBuilderImpl(
     }
 
     override fun add(panel: JPanel) {
-        panel.add(panel)
+        this.panel.add(panel)
     }
 }

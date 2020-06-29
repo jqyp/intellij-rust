@@ -24,6 +24,7 @@ import org.rust.cargo.runconfig.filters.RsExplainFilter
 import org.rust.cargo.runconfig.filters.RsPanicFilter
 import org.rust.cargo.toolchain.CargoCommandLine
 import org.rust.cargo.toolchain.run
+import org.rust.ide.sdk.toolchain
 import org.rust.openapiext.checkIsDispatchThread
 import org.rust.stdext.buildList
 
@@ -52,7 +53,8 @@ fun Project.buildProject() {
         val settings = rustSettings
         add("--all")
         if (settings.compileAllTargets) {
-            val allTargets = settings.toolchain
+            val allTargets = settings.sdk
+                ?.toolchain
                 ?.rawCargo()
                 ?.checkSupportForBuildCheckAllTargets()
                 ?: false

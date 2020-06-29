@@ -42,7 +42,7 @@ class RsConfigurableToolchainList {
         fun getInstance(project: Project?): RsConfigurableToolchainList {
             val effectiveProject = project ?: ProjectManager.getInstance().defaultProject
             val instance = effectiveProject.service<RsConfigurableToolchainList>()
-            if (effectiveProject !== project) {
+            if (effectiveProject != project) {
                 instance.disposeModel()
             }
             return instance

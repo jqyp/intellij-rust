@@ -11,6 +11,7 @@ import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.util.PathUtil
 import org.rust.ide.sdk.RsDetectedSdk
+import org.rust.ide.sdk.RsSdkAdditionalData
 import org.rust.ide.sdk.RsSdkListCellRenderer
 import org.rust.ide.sdk.RsSdkType
 import javax.swing.plaf.basic.BasicComboBoxEditor
@@ -44,7 +45,7 @@ class RsSdkPathChoosingComboBox(sdks: List<Sdk> = emptyList(), suggestedFile: Vi
 
     init {
         childComponent.apply {
-            renderer = RsSdkListCellRenderer(null)
+            renderer = RsSdkListCellRenderer()
             ComboboxSpeedSearch(this)
         }
         addActionListener {

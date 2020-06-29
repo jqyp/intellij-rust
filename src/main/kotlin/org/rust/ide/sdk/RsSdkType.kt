@@ -5,9 +5,12 @@
 
 package org.rust.ide.sdk
 
+import com.intellij.execution.process.ProcessIOExecutorService
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.projectRoots.*
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.util.Key
@@ -20,6 +23,7 @@ import org.rust.ide.icons.RsIcons
 import org.rust.ide.sdk.RsSdkUtils.detectRustSdks
 import org.rust.ide.sdk.add.RsAddSdkDialog
 import org.rust.ide.sdk.flavors.RsSdkFlavor
+import org.rust.openapiext.computeWithCancelableProgress
 import java.lang.ref.WeakReference
 import javax.swing.Icon
 import javax.swing.JComponent
@@ -108,7 +112,10 @@ class RsSdkType : SdkType(RUST_SDK_ID_NAME) {
     override fun getVersionString(sdk: Sdk): String? {
         val additionalData = sdk.sdkAdditionalData as? RsSdkAdditionalData
         val toolchain = additionalData?.toolchain ?: return null
-        val versionInfo = toolchain.queryVersions()
+        val project = ProjectManager.getInstance().defaultProject // TODO
+        val versionInfo = project.computeWithCancelableProgress("Fetching rustc version...") {
+            toolchain.queryVersions()
+        }
         return versionInfo.rustc?.semver?.parsedVersion
     }
 

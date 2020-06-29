@@ -18,10 +18,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.messages.Topic
 import org.rust.cargo.CargoConstants
 import org.rust.cargo.project.settings.rustSettings
+import org.rust.cargo.project.settings.toolchain
 import org.rust.cargo.project.workspace.CargoWorkspace
-import org.rust.cargo.toolchain.RustToolchain
 import org.rust.cargo.toolchain.RustcVersion
 import org.rust.ide.notifications.showBalloon
+import org.rust.ide.sdk.*
+import org.rust.ide.sdk.RsSdkUtils.findOrCreateSdk
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
@@ -119,9 +121,9 @@ fun guessAndSetupRustProject(project: Project, explicitRequest: Boolean = false)
         if (alreadyTried) return false
     }
 
-    val toolchain = project.rustSettings.toolchain
+    val toolchain = project.toolchain
     if (toolchain == null || !toolchain.looksLikeValidToolchain()) {
-        discoverToolchain(project)
+        discoverSdk(project)
         return true
     }
     if (!project.cargoProjects.hasAtLeastOneValidProject) {
@@ -131,21 +133,21 @@ fun guessAndSetupRustProject(project: Project, explicitRequest: Boolean = false)
     return false
 }
 
-private fun discoverToolchain(project: Project) {
-    val toolchain = RustToolchain.suggest() ?: return
+private fun discoverSdk(project: Project) {
+    val sdk = findOrCreateSdk() ?: return
     invokeLater {
         if (project.isDisposed) return@invokeLater
 
-        val oldToolchain = project.rustSettings.toolchain
+        val oldToolchain = project.toolchain
         if (oldToolchain != null && oldToolchain.looksLikeValidToolchain()) {
             return@invokeLater
         }
 
         runWriteAction {
-            project.rustSettings.modify { it.toolchain = toolchain }
+            project.rustSettings.modify { it.sdk = sdk }
         }
 
-        val tool = if (toolchain.isRustupAvailable) "rustup" else "Cargo at ${toolchain.presentableLocation}"
+        val tool = if (sdk.isRustupAvailable) "rustup" else "Toolchain at ${sdk.toolchain?.location}"
         project.showBalloon("Using $tool", NotificationType.INFORMATION)
         project.cargoProjects.discoverAndRefresh()
     }

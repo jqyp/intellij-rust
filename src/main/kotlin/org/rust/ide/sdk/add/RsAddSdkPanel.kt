@@ -5,14 +5,12 @@
 
 package org.rust.ide.sdk.add
 
-import com.intellij.CommonBundle
 import com.intellij.openapi.application.AppUIExecutor
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
 import org.rust.ide.icons.RsIcons
-import org.rust.ide.sdk.RsSdkToInstall
 import java.awt.Component
 import javax.swing.Icon
 import javax.swing.JPanel
@@ -49,14 +47,7 @@ abstract class RsAddSdkPanel : JPanel(), RsAddSdkView {
 
         @JvmStatic
         protected fun validateSdkComboBox(field: RsSdkPathChoosingComboBox): ValidationInfo? =
-            when (val sdk = field.selectedSdk) {
-                null -> ValidationInfo("SDK field is empty", field)
-                is RsSdkToInstall -> {
-                    val message = sdk.getInstallationWarning(CommonBundle.getOkButtonText())
-                    ValidationInfo(message).asWarning().withOKEnabled()
-                }
-                else -> null
-            }
+            if (field.selectedSdk == null) ValidationInfo("SDK field is empty", field) else null
 
         /**
          * Obtains a list of sdk on a pool using [sdkObtainer], then fills [sdkComboBox] on the EDT.

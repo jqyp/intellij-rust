@@ -49,6 +49,7 @@ import org.rust.cargo.project.settings.RustProjectSettingsService
 import org.rust.cargo.project.settings.RustProjectSettingsService.RustSettingsChangedEvent
 import org.rust.cargo.project.settings.RustProjectSettingsService.RustSettingsListener
 import org.rust.cargo.project.settings.rustSettings
+import org.rust.cargo.project.settings.rustup
 import org.rust.cargo.project.settings.toolchain
 import org.rust.cargo.project.toolwindow.CargoToolWindow.Companion.initializeToolWindow
 import org.rust.cargo.project.workspace.CargoWorkspace
@@ -114,6 +115,7 @@ open class CargoProjectsServiceImpl(
 
 
     private val noProjectMarker = CargoProjectImpl(Paths.get(""), this)
+
     /**
      * [directoryIndex] allows to quickly map from a [VirtualFile] to
      * a containing [CargoProject].
@@ -355,7 +357,7 @@ data class CargoProjectImpl(
             }
         }
 
-        val rustup = toolchain?.rustup(workingDirectory)
+        val rustup = project.rustup(workingDirectory)
         if (rustup == null) {
             val explicitPath = project.rustSettings.explicitPathToStdlib
             val lib = explicitPath?.let { StandardLibrary.fromPath(it) }
@@ -545,7 +547,7 @@ private fun fetchCargoWorkspace(
         progress.isIndeterminate = true
         if (!toolchain.looksLikeValidToolchain()) {
             return@runAsyncTask err(
-                "invalid Rust toolchain ${toolchain.presentableLocation}"
+                "invalid Rust toolchain ${toolchain.location}"
             )
         }
         val cargo = toolchain.cargoOrWrapper(projectDirectory)
@@ -585,7 +587,7 @@ private fun fetchRustcInfo(
         progress.isIndeterminate = true
         if (!toolchain.looksLikeValidToolchain()) {
             return@runAsyncTask err(
-                "invalid Rust toolchain ${toolchain.presentableLocation}"
+                "invalid Rust toolchain ${toolchain.location}"
             )
         }
 

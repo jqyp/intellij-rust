@@ -5,61 +5,55 @@
 
 package org.rust.ide.sdk
 
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
-import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.ModuleRootModificationUtil
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.util.io.FileUtil
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.messages.Topic
+import org.rust.cargo.toolchain.RustToolchain
+import org.rust.cargo.toolchain.Rustup
+import org.rust.cargo.toolchain.Rustup.Companion.listToolchains
 import org.rust.ide.sdk.flavors.RsSdkFlavor
 import org.rust.ide.sdk.flavors.RustupSdkFlavor
-import org.rust.openapiext.GeneralCommandLine
-import org.rust.openapiext.execute
+import java.io.File
 import java.nio.file.Path
+import java.nio.file.Paths
 
-var Project.rustSdk: Sdk?
-    get() {
-        val sdk = ProjectRootManager.getInstance(this).projectSdk
-        return sdk?.takeIf { it.sdkType is RsSdkType }
+val Sdk.toolchain: RustToolchain?
+    get() = (sdkAdditionalData as? RsSdkAdditionalData)?.toolchain
+
+fun Sdk.rustup(projectDirectory: Path): Rustup? =
+    if (isRustupAvailable) {
+        (sdkAdditionalData as? RsSdkAdditionalData)?.rustup(projectDirectory)
+    } else {
+        null
     }
-    set(value) {
-        val application = ApplicationManager.getApplication()
-        application.invokeAndWait {
-            application.runWriteAction {
-                ProjectRootManager.getInstance(this).projectSdk = value
-            }
-        }
+
+val Sdk.isRustupAvailable: Boolean
+    get() {
+        val homePath = homePath?.let(::File) ?: return false
+        return RustupSdkFlavor.isValidSdkHome(homePath)
     }
 
 object RsSdkUtils {
-    private const val RUST_SDK_ID_NAME: String = "Rust SDK"
 
-    fun isRustSdk(sdk: Sdk): Boolean = sdk.sdkType.name == RUST_SDK_ID_NAME
+    fun findOrCreateSdk(): Sdk? {
+        val allSdks = ProjectJdkTable.getInstance().allJdks.toList()
+        val existingSdk = allSdks.find { it.sdkType is RsSdkType }
+        if (existingSdk != null) return existingSdk
 
-    fun findRustSdk(module: Module?): Sdk? {
-        if (module == null) return null
-        val sdk = ModuleRootManager.getInstance(module).sdk
-        return if (sdk != null && isRustSdk(sdk)) sdk else null
-    }
+        val detectedSdk = detectRustSdks(allSdks).firstOrNull() ?: return null
+        val sdk = detectedSdk.setup(allSdks) ?: return null
+        val homePath = sdk.homePath ?: return null
 
-    fun getAllSdks(): List<Sdk> = ProjectJdkTable.getInstance().allJdks.filter { sdk -> isRustSdk(sdk) }
-
-    fun findSdkByPath(path: String?): Sdk? = path?.let { findSdkByPath(getAllSdks(), it) }
-
-    fun findSdkByPath(sdkList: List<Sdk?>, path: String?): Sdk? {
-        if (path == null) return null
-        for (sdk in sdkList) {
-            if (sdk != null && FileUtil.pathsEqual(path, sdk.homePath)) {
-                return sdk
-            }
+        val data = sdk.sdkAdditionalData as? RsSdkAdditionalData ?: return null
+        if (data.flavor is RustupSdkFlavor) {
+            val toolchain = listToolchains(Paths.get(homePath)).find { it.isDefault } ?: return null
+            data.toolchainName = toolchain.name
+            data.toolchainPath = toolchain.path
+            data.rustupPath = homePath
+        } else {
+            data.toolchainPath = homePath
         }
-        return null
+
+        return sdk
     }
 
     fun findSdkByKey(key: String): Sdk? = ProjectJdkTable.getInstance().findJdk(key)
@@ -82,6 +76,7 @@ object RsSdkUtils {
         return flavors.asSequence()
             .flatMap { it.suggestHomePaths() }
             .map { it.absolutePath }
+            .distinct()
             .filterNot { it in existingPaths }
             .map { RsDetectedSdk(it) }
             .toList()
@@ -91,12 +86,4 @@ object RsSdkUtils {
         val toolchain = sdk.homeDirectory
         return toolchain == null || !toolchain.exists()
     }
-
-    fun listToolchains(rustup: Path): List<String> =
-        GeneralCommandLine(rustup)
-            .withParameters("toolchain", "list")
-            .execute()
-            ?.stdoutLines
-            ?.map { it.removeSuffix(" (default)") }
-            .orEmpty()
 }

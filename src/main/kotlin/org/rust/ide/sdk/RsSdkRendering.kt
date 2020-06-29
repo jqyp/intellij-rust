@@ -6,7 +6,6 @@
 package org.rust.ide.sdk
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkModificator
 import com.intellij.openapi.projectRoots.SdkType
@@ -69,7 +68,7 @@ object RsSdkRenderingUtils {
         .filterNot(isInvalid)
         .groupBy {
             when {
-//                RsSdkUtils.isFromRustup(it) -> RsRenderedSdkType.RUSTUP
+//                RustupSdkFlavor.isValidSdkHome(it.homePath) -> RsRenderedSdkType.RUSTUP
                 else -> RsRenderedSdkType.CARGO
             }
         }

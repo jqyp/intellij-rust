@@ -12,6 +12,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.StoragePathMacros
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.PsiModificationTrackerImpl
 import com.intellij.util.xmlb.XmlSerializer.deserializeInto
@@ -21,7 +22,6 @@ import org.rust.cargo.project.settings.RustProjectSettingsService
 import org.rust.cargo.project.settings.RustProjectSettingsService.*
 import org.rust.cargo.project.settings.RustProjectSettingsService.Companion.RUST_SETTINGS_TOPIC
 import org.rust.cargo.toolchain.ExternalLinter
-import org.rust.cargo.toolchain.RustToolchain
 
 private const val serviceName: String = "RustProjectSettings"
 
@@ -36,7 +36,7 @@ class RustProjectSettingsServiceImpl(
     private var state: State = State()
 
     override val version: Int? get() = state.version
-    override val toolchain: RustToolchain? get() = state.toolchain
+    override val sdk: Sdk? get() = state.sdk
     override val autoUpdateEnabled: Boolean get() = state.autoUpdateEnabled
     override val explicitPathToStdlib: String? get() = state.explicitPathToStdlib
     override val externalLinter: ExternalLinter get() = state.externalLinter

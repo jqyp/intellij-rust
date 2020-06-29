@@ -26,6 +26,7 @@ import com.intellij.ui.layout.panel
 import com.intellij.util.text.nullize
 import org.rust.cargo.project.model.CargoProject
 import org.rust.cargo.project.model.cargoProjects
+import org.rust.cargo.project.settings.isRustupAvailable
 import org.rust.cargo.project.settings.toolchain
 import org.rust.cargo.project.workspace.CargoWorkspace
 import org.rust.cargo.runconfig.command.CargoCommandConfiguration
@@ -122,7 +123,7 @@ class CargoCommandConfigurationEditor(private val project: Project) : SettingsEd
         configuration.workingDirectory = currentWorkingDirectory
         configuration.env = environmentVariables.envData
 
-        val rustupAvailable = project.toolchain?.isRustupAvailable ?: false
+        val rustupAvailable = project.isRustupAvailable
         channel.isEnabled = rustupAvailable || configChannel != RustChannel.DEFAULT
         if (!rustupAvailable && configChannel != RustChannel.DEFAULT) {
             throw ConfigurationException("Channel cannot be set explicitly because rustup is not available")

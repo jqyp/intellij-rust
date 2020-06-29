@@ -19,12 +19,11 @@ import org.rust.cargo.project.model.CargoProject
 import org.rust.cargo.project.model.CargoProjectsService
 import org.rust.cargo.project.model.cargoProjects
 import org.rust.cargo.project.model.guessAndSetupRustProject
-import org.rust.cargo.project.settings.RustProjectSettingsService
+import org.rust.cargo.project.settings.*
 import org.rust.cargo.project.settings.RustProjectSettingsService.RustSettingsChangedEvent
 import org.rust.cargo.project.settings.RustProjectSettingsService.RustSettingsListener
-import org.rust.cargo.project.settings.rustSettings
-import org.rust.cargo.project.settings.toolchain
 import org.rust.cargo.project.workspace.StandardLibrary
+import org.rust.ide.sdk.isRustupAvailable
 import org.rust.lang.core.psi.isNotRustFile
 
 /**
@@ -79,7 +78,8 @@ class MissingToolchainNotificationProvider(project: Project) : RsNotificationPro
             // If rustup is not null, the WorkspaceService will use it
             // to add stdlib automatically. This happens asynchronously,
             // so we can't reliably say here if that succeeded or not.
-            if (!toolchain.isRustupAvailable) return createLibraryAttachingPanel(file)
+            val available = project.isRustupAvailable
+            if (!available) return createLibraryAttachingPanel(file)
         }
 
         return null

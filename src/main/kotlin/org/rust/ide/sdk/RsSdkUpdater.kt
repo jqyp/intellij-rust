@@ -9,11 +9,11 @@ import com.intellij.ide.plugins.PluginManagerCore.isUnitTestMode
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.TransactionGuard
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkModificator
 import com.intellij.openapi.startup.StartupActivity
@@ -24,7 +24,8 @@ class RsSdkUpdater : StartupActivity.Background {
         if (isUnitTestMode || project.isDisposed) return
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Updating Rust Toolchains", false) {
             override fun run(indicator: ProgressIndicator) {
-                for (sdk in getRustSdks(project)) {
+                val sdks = ProjectJdkTable.getInstance().getSdksOfType(RsSdkType.getInstance())
+                for (sdk in sdks) {
                     updateLocalSdkVersion(sdk)
                 }
             }
@@ -55,11 +56,5 @@ class RsSdkUpdater : StartupActivity.Background {
                 }
             }
         }
-
-        private fun getRustSdks(project: Project): Set<Sdk> =
-            ModuleManager.getInstance(project).modules
-                .mapNotNull { module -> RsSdkUtils.findRustSdk(module) }
-                .filter { sdk -> sdk.sdkType is RsSdkType }
-                .toSet()
     }
 }

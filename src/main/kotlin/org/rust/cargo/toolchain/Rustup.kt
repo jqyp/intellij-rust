@@ -11,7 +11,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.rust.cargo.project.settings.toolchain
+import org.rust.cargo.project.settings.rustup
 import org.rust.cargo.util.DownloadResult
 import org.rust.ide.actions.InstallComponentAction
 import org.rust.ide.notifications.showBalloon
@@ -25,24 +25,6 @@ class Rustup(
     private val rustup: Path,
     private val projectDirectory: Path
 ) {
-    data class Component(val name: String, val isInstalled: Boolean) {
-        companion object {
-            fun from(line: String): Component {
-                val name = line.substringBefore(' ')
-                val isInstalled = line.substringAfter(' ') in listOf("(installed)", "(default)")
-                return Component(name, isInstalled)
-            }
-        }
-    }
-
-    fun listComponents(): List<Component> =
-        GeneralCommandLine(rustup)
-            .withWorkDirectory(projectDirectory)
-            .withParameters("component", "list")
-            .execute()
-            ?.stdoutLines
-            ?.map { Component.from(it) }
-            ?: emptyList()
 
     fun downloadStdlib(): DownloadResult<VirtualFile> {
         // Sometimes we have stdlib but don't have write access to install it (for example, github workflow)
@@ -87,7 +69,49 @@ class Rustup(
         return !isInstalled
     }
 
+    private fun listComponents(): List<Component> =
+        GeneralCommandLine(rustup)
+            .withWorkDirectory(projectDirectory)
+            .withParameters("component", "list")
+            .execute()
+            ?.stdoutLines
+            ?.map { Component.from(it) }
+            .orEmpty()
+
+    data class Component(val name: String, val isInstalled: Boolean) {
+        companion object {
+            fun from(line: String): Component {
+                val name = line.substringBefore(' ')
+                val isInstalled = line.substringAfter(' ') in listOf("(installed)", "(default)")
+                return Component(name, isInstalled)
+            }
+        }
+    }
+
+    data class Toolchain(val name: String, val path: String, val isDefault: Boolean) {
+
+        override fun toString(): String = name
+
+        companion object {
+            fun from(line: String): Toolchain {
+                val before = line.substringBefore('\t')
+                val name = before.removeSuffix(" (default)")
+                val isDefault = before.endsWith("(default)")
+                val path = line.substringAfter('\t')
+                return Toolchain(name, path, isDefault)
+            }
+        }
+    }
+
     companion object {
+
+        fun listToolchains(rustup: Path): List<Toolchain> =
+            GeneralCommandLine(rustup)
+                .withParameters("toolchain", "list", "--verbose")
+                .execute()
+                ?.stdoutLines
+                ?.map { Toolchain.from(it) }
+                .orEmpty()
 
         fun checkNeedInstallClippy(project: Project, cargoProjectDirectory: Path): Boolean =
             checkNeedInstallComponent(project, cargoProjectDirectory, "clippy")
@@ -104,7 +128,7 @@ class Rustup(
             cargoProjectDirectory: Path,
             componentName: String
         ): Boolean {
-            val rustup = project.toolchain?.rustup(cargoProjectDirectory) ?: return false
+            val rustup = project.rustup(cargoProjectDirectory) ?: return false
             val needInstall = rustup.needInstallComponent(componentName)
 
             if (needInstall) {

@@ -15,7 +15,6 @@ import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.openapi.util.Disposer
 import org.rust.ide.sdk.add.RsAddSdkDialog
 import java.awt.Point
-import java.util.*
 import javax.swing.JComponent
 
 class RsSdkDetailsStep(
@@ -34,7 +33,7 @@ class RsSdkDetailsStep(
         }
     }
 
-    override fun onChosen(selectedValue: String?, finalChoice: Boolean): PopupStep<*> =
+    override fun onChosen(selectedValue: String?, finalChoice: Boolean): PopupStep<*>? =
         doFinalStep { optionSelected(selectedValue) }
 
     private fun optionSelected(selectedValue: String?) {
@@ -67,7 +66,7 @@ class RsSdkDetailsStep(
         }
 
         private fun getAvailableOptions(showAll: Boolean): List<String> {
-            val options: MutableList<String> = ArrayList()
+            val options = mutableListOf<String>()
             options.add(ADD)
             if (showAll) {
                 options.add(ALL)

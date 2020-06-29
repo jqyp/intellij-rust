@@ -9,8 +9,6 @@
         <!-- Project Creation -->
         <projectOpenProcessor id="Cargo" implementation="org.rust.cargo.project.CargoProjectOpenProcessor"/>
         <directoryProjectGenerator implementation="org.rust.ide.newProject.RsDirectoryProjectGenerator"/>
-        <directoryProjectConfigurator implementation="org.rust.ide.sdk.RsSdkConfigurator" id="sdk"
-                                      order="after PlatformProjectConfigurator"/>
 
         <!-- SDK -->
         <sdkType implementation="org.rust.ide.sdk.RsSdkType"/>
@@ -998,9 +996,6 @@
                         dynamic="true"/>
         <extensionPoint qualifiedName="org.rust.sdkComparator"
                         interface="org.rust.ide.sdk.RsSdkComparator"
-                        dynamic="true"/>
-        <extensionPoint qualifiedName="org.rust.customSdkUiProvider"
-                        interface="org.rust.ide.sdk.RsCustomSdkUiProvider"
                         dynamic="true"/>
     </extensionPoints>
 

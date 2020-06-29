@@ -66,21 +66,11 @@ data class RustToolchain(val location: Path) {
         return Cargo(pathToExecutable(cargoWrapper))
     }
 
-    fun rustup(cargoProjectDirectory: Path): Rustup? =
-        if (isRustupAvailable)
-            Rustup(this, pathToExecutable(RUSTUP), cargoProjectDirectory)
-        else
-            null
-
     fun rustfmt(): Rustfmt = Rustfmt(pathToExecutable(RUSTFMT))
 
     fun grcov(): Grcov? = if (hasExecutable(GRCOV)) Grcov(pathToExecutable(GRCOV)) else null
 
     fun evcxr(): Evcxr? = if (hasExecutable(EVCXR)) Evcxr(pathToExecutable(EVCXR)) else null
-
-    val isRustupAvailable: Boolean get() = hasExecutable(RUSTUP)
-
-    val presentableLocation: String = pathToExecutable(CARGO).toString()
 
     private fun pathToExecutable(toolName: String): Path {
         val exeName = if (SystemInfo.isWindows) "$toolName.exe" else toolName
@@ -98,7 +88,6 @@ data class RustToolchain(val location: Path) {
         private const val RUSTC = "rustc"
         private const val RUSTFMT = "rustfmt"
         private const val CARGO = "cargo"
-        private const val RUSTUP = "rustup"
         private const val XARGO = "xargo"
         private const val GRCOV = "grcov"
         private const val EVCXR = "evcxr"

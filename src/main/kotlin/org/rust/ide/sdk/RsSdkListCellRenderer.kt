@@ -14,7 +14,7 @@ import java.awt.Component
 import javax.swing.JList
 
 open class RsSdkListCellRenderer(
-    private val sdkModifiers: Map<Sdk, SdkModificator>?,
+    private val sdkModifiers: Map<Sdk, SdkModificator>? = null,
     private val nullSdkName: String = noToolchainMarker,
     private val nullSdkValue: Sdk? = null
 ) : ColoredListCellRenderer<Any>() {
@@ -40,7 +40,6 @@ open class RsSdkListCellRenderer(
         hasFocus: Boolean
     ) {
         when (value) {
-            is RsSdkToInstall -> value.renderInList(this)
             is Sdk -> {
                 val sdkModificator = sdkModifiers?.get(value)
                 appendName(value, name(value, sdkModificator), sdkModificator)

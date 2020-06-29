@@ -41,24 +41,6 @@ interface RsSdkFlavor {
 
     fun getSdkPath(path: VirtualFile?): VirtualFile? = path
 
-    fun getVersionString(sdkPath: String?): String? {
-        if (sdkPath == null) return null
-        val sdkHome = File(sdkPath)
-        val rustc = queryVersions(sdkHome).rustc ?: return null
-        return rustc.semver.parsedVersion
-    }
-
-    fun queryVersions(sdkHome: File): VersionInfo {
-//        if (!isUnitTestMode) {
-//            checkIsBackgroundThread()
-//        }
-        return VersionInfo(scrapeRustcVersion(sdkHome.pathToExecutable(RUSTC)))
-    }
-
-    data class VersionInfo(
-        val rustc: RustcVersion?
-    )
-
     companion object {
         @JvmField
         val EP_NAME: ExtensionPointName<RsSdkFlavor> = ExtensionPointName.create("org.rust.sdkFlavor")

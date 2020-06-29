@@ -12,6 +12,7 @@ import org.rust.cargo.project.settings.impl.RustProjectSettingsServiceImpl
 import org.rust.cargo.project.settings.impl.XML_FORMAT_VERSION
 import org.rust.cargo.toolchain.ExternalLinter
 import org.rust.cargo.toolchain.RustToolchain
+import org.rust.ide.sdk.toolchain
 import org.rust.openapiext.elementFromXmlString
 import org.rust.openapiext.toXmlString
 import java.nio.file.Paths
@@ -45,7 +46,7 @@ class RustProjectSettingsServiceTest : LightPlatformTestCase() {
         assertEquals(text, actual)
 
         assertEquals(XML_FORMAT_VERSION, service.version)
-        assertEquals(RustToolchain(Paths.get("/")), service.toolchain)
+        assertEquals(RustToolchain(Paths.get("/")), service.sdk?.toolchain)
         assertEquals(false, service.autoUpdateEnabled)
         assertEquals(ExternalLinter.CLIPPY, service.externalLinter)
         assertEquals("/stdlib", service.explicitPathToStdlib)

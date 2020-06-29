@@ -11,24 +11,23 @@ import org.jdom.Element
 import org.rust.cargo.toolchain.RustToolchain
 import org.rust.cargo.toolchain.Rustup
 import org.rust.ide.sdk.flavors.RsSdkFlavor
+import java.nio.file.Path
 import java.nio.file.Paths
 
 class RsSdkAdditionalData(val flavor: RsSdkFlavor?) : SdkAdditionalData {
     var toolchainName: String? = null
     var toolchainPath: String? = null
-    var stdlibPath: String? = null
     var rustupPath: String? = null
+    var stdlibPath: String? = null
 
     val toolchain: RustToolchain?
         get() = toolchainPath?.let { RustToolchain(Paths.get(it)) }
 
-    val rustup: Rustup?
-        get() {
-            val toolchain = toolchain ?: return null
-            val rustupPath = rustupPath?.let { Paths.get(it) } ?: return null
-            val projectDirectory = Paths.get(".")
-            return Rustup(toolchain, rustupPath, projectDirectory)
-        }
+    fun rustup(projectDirectory: Path = Paths.get(".")): Rustup? {
+        val toolchain = toolchain ?: return null
+        val rustupPath = rustupPath?.let { Paths.get(it) } ?: return null
+        return Rustup(toolchain, rustupPath, projectDirectory)
+    }
 
     private constructor(from: RsSdkAdditionalData) : this(from.flavor) {
         toolchainName = from.toolchainName
@@ -42,16 +41,16 @@ class RsSdkAdditionalData(val flavor: RsSdkFlavor?) : SdkAdditionalData {
     fun save(rootElement: Element) {
         toolchainName?.let { rootElement.setAttribute(TOOLCHAIN_NAME, it) }
         toolchainPath?.let { rootElement.setAttribute(TOOLCHAIN_PATH, it) }
-        stdlibPath?.let { rootElement.setAttribute(STDLIB_PATH, it) }
         rustupPath?.let { rootElement.setAttribute(RUSTUP_PATH, it) }
+        stdlibPath?.let { rootElement.setAttribute(STDLIB_PATH, it) }
     }
 
     private fun load(element: Element?) {
         if (element == null) return
         toolchainName = element.getAttributeValue(TOOLCHAIN_NAME)
         toolchainPath = element.getAttributeValue(TOOLCHAIN_PATH)
-        stdlibPath = element.getAttributeValue(STDLIB_PATH)
         rustupPath = element.getAttributeValue(RUSTUP_PATH)
+        stdlibPath = element.getAttributeValue(STDLIB_PATH)
     }
 
     companion object {

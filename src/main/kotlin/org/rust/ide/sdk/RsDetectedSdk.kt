@@ -8,11 +8,13 @@ package org.rust.ide.sdk
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
+import org.rust.ide.sdk.flavors.RsSdkFlavor
+import org.rust.ide.sdk.flavors.RustupSdkFlavor
 
-class RsDetectedSdk(name: String) : ProjectJdkImpl(name, RsSdkType.getInstance()) {
+class RsDetectedSdk(homePath: String) : ProjectJdkImpl(homePath, RsSdkType.getInstance()) {
 
     init {
-        homePath = name
+        this.homePath = homePath
     }
 
     override fun getVersionString(): String? = ""
@@ -23,7 +25,7 @@ class RsDetectedSdk(name: String) : ProjectJdkImpl(name, RsSdkType.getInstance()
             homeDirectory ?: return null,
             RsSdkType.getInstance(),
             false,
-            null,
+            RsSdkAdditionalData(RsSdkFlavor.getFlavor(homePath)),
             null
         )
     }

@@ -9,6 +9,7 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.util.ui.FormBuilder
 import org.rust.ide.sdk.RsDetectedSdk
+import org.rust.ide.sdk.RsSdkAdditionalData
 import org.rust.ide.sdk.RsSdkUtils.detectSystemWideSdks
 import java.awt.BorderLayout
 
@@ -29,10 +30,15 @@ class RsAddSystemWideToolchainPanel(private val existingSdks: List<Sdk>) : RsAdd
     override fun validateAll(): List<ValidationInfo> = listOfNotNull(validateSdkComboBox(sdkComboBox))
 
     override fun getOrCreateSdk(): Sdk? {
-        return when (val sdk = sdkComboBox.selectedSdk) {
+        val sdk = when (val sdk = sdkComboBox.selectedSdk) {
             is RsDetectedSdk -> sdk.setup(existingSdks)
             else -> sdk
         }
+
+        val additionalData = sdk?.sdkAdditionalData as? RsSdkAdditionalData
+        additionalData?.toolchainPath = sdk?.homePath
+
+        return sdk
     }
 
     override fun addChangeListener(listener: Runnable) {
