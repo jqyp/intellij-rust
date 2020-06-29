@@ -131,7 +131,7 @@ class RsDocumentationProvider : AbstractDocumentationProvider() {
             if (element !is RsDocAndAttributeOwner ||
                 element !is RsQualifiedNamedElement ||
                 !element.hasExternalDocumentation) return emptyList()
-            val origin = element.containingCargoPackage?.origin
+            val origin = element.containingCrate?.origin
             RsQualifiedName.from(element) to origin
         }
 
