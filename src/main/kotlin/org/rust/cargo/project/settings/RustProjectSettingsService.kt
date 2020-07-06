@@ -43,6 +43,7 @@ interface RustProjectSettingsService {
         var macroExpansionEngine: MacroExpansionEngine = defaultMacroExpansionEngine,
         @AffectsHighlighting
         var doctestInjectionEnabled: Boolean = true,
+        var useRustfmtByDefault: Boolean = false,
         var runRustfmtOnSave: Boolean = false,
         var useSkipChildren: Boolean = false
     ) {
@@ -84,6 +85,7 @@ interface RustProjectSettingsService {
     val useOffline: Boolean
     val macroExpansionEngine: MacroExpansionEngine
     val doctestInjectionEnabled: Boolean
+    val useRustfmtByDefault: Boolean
     val runRustfmtOnSave: Boolean
     val useSkipChildren: Boolean
 

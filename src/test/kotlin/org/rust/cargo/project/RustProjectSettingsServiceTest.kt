@@ -32,6 +32,7 @@ class RustProjectSettingsServiceTest : LightPlatformTestCase() {
               <option name="externalLinterArguments" value="--no-default-features" />
               <option name="macroExpansionEngine" value="DISABLED" />
               <option name="runExternalLinterOnTheFly" value="true" />
+              <option name="useRustfmtByDefault" value="true" />
               <option name="runRustfmtOnSave" value="true" />
               <option name="toolchainHomeDirectory" value="/" />
               <option name="useOffline" value="true" />
@@ -55,6 +56,7 @@ class RustProjectSettingsServiceTest : LightPlatformTestCase() {
         assertEquals(true, service.useOffline)
         assertEquals(MacroExpansionEngine.DISABLED, service.macroExpansionEngine)
         assertEquals(false, service.doctestInjectionEnabled)
+        assertEquals(true, service.useRustfmtByDefault)
         assertEquals(true, service.runRustfmtOnSave)
         assertEquals(true, service.useSkipChildren)
     }

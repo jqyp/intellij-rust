@@ -59,7 +59,10 @@
 
         <!-- Formatter -->
 
+        <!--suppress PluginXmlValidity -->
+        <externalFormatProcessor implementation="org.rust.ide.formatter.RsExternalFormatter"/>
         <lang.formatter language="Rust" implementationClass="org.rust.ide.formatter.RsFormattingModelBuilder"/>
+        <postFormatProcessor implementation="org.rust.ide.formatter.processors.RsPostFormatProcessor"/>
         <postFormatProcessor implementation="org.rust.ide.formatter.processors.RsTrailingCommaFormatProcessor"/>
         <preFormatProcessor implementation="org.rust.ide.formatter.processors.RsMatchArmCommaFormatProcessor"/>
         <preFormatProcessor implementation="org.rust.ide.formatter.processors.RsStatementSemicolonFormatProcessor"/>
